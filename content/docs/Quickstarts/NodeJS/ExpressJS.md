@@ -2,7 +2,9 @@
 title: Express Js
 date: 2022-03-23
 publishdate: 2022-03-24
+imageurl: /assets/img/framework-logos/express-logo.png
 weight: 1
+toc: true
 menu:
   main:
     weight: 1
@@ -31,6 +33,9 @@ The APIToolkit integration guide for ExpressJS provides a streamlined process to
    const app = express();
    const port = 3000;
 
+   app.use(express.json());
+   app.use(express.urlencoded({ extended: true }));
+
    const apitoolkitClient = APIToolkit.NewClient({ apiKey: '<API-KEY>' });
    app.use(apitoolkitClient.expressMiddleware);
 
@@ -55,6 +60,9 @@ The APIToolkit integration guide for ExpressJS provides a streamlined process to
    const apitoolkitClient = APIToolkit.NewClient({
      apiKey: '<API_KEY>',
    });
+
+   app.use(express.json());
+   app.use(express.urlencoded({ extended: true }));
 
    app.use(apitoolkitClient.expressMiddleware);
 
@@ -87,6 +95,10 @@ const apitoolkitClient = await APIToolkit.NewClient({
   redactRequestBody: ['$.credit-card.cvv', '$.credit-card.name'], // Specified request bodies fields will be redacted
   redactResponseBody: ['$.message.error'], // Specified response body fields will be redacted
 });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(apitoolkitClient.expressMiddleware);
 
 app.get('/', (req, res) => {
@@ -100,7 +112,7 @@ app.listen(port, () => {
 
 It is important to note that while the `redactHeaders` config field accepts a list of headers(case insensitive), the `redactRequestBody` and `redactResponseBody` expect a list of JSONPath strings as arguments.
 
-The choice of JSONPath was selected to allow you have great flexibility in describing which fields within your responses are sensitive. Also note that these list of items to be redacted will be applied to all endpoint requests and responses on your server. To learn more about jsonpath to help form your queries, please take a look at this [cheat-sheet.](https://lzone.de/cheat-sheet/JSONPath)
+The choice of JSONPath was selected to allow you have great flexibility in describing which fields within your responses are sensitive. Also note that these list of items to be redacted will be applied to all endpoint requests and responses on your server. To learn more about jsonpath, please take a look at this [cheat-sheet.](https://lzone.de/cheat-sheet/JSONPath)
 
 ## Handling File Uploads with Formidable
 
@@ -119,6 +131,9 @@ const app = express();
 const client = APIToolkit.NewClient({
   apiKey: '<API_KEY>',
 });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use(client.expressMiddleware);
 
@@ -189,29 +204,71 @@ For the other arguments, you can either skip them if at the end, or use undefine
 APIToolkit detects a lot of API issues automatically, but it's also valuable to report and track errors. This helps you associate more details about the backend with a given failing request.
 If you've used sentry, or rollback, or bugsnag, then you're likely aware of this functionality.
 
-Within the context of a web request, reporting error is as simple as calling the apitoolkit ReportError function.
+To enable automatic error reporting, add the APIToolkit `errorHandler` middleware immediately after your app's controllers and APIToolkit will handle all uncaught errors that happened during a request and associate the error to that request.
 
 ```typescript
-import { ReportError, observeAxios } from 'apitoolkit-express';
+import {APIToolkit , ReportError } from "apitoolkit-express";
+import express from "express";
+import axios from "axios"
 
-try {
+const app = express();
+const port = 3000;
+const apitoolkitClient= APIToolkit.NewClient({apiKey: "<API-KEY>"});
+app.use(apitoolkitClient.expressMiddleware);
+
+// All controllers should live here
+app.get("/", (req, res) => {
+
+});
+// ...
+
+// The error handler must be before any other error middleware and after all controllers
+app.use(apitoolkitClient.errorHandler)
+```
+
+Or manually report errors within the context of a web request, by calling the ReportError function.
+
+```typescript
+import {APIToolkit , ReportError } from "apitoolkit-express";
+import express from "express";
+import axios from "axios"
+
+const app = express();
+const port = 3000;
+const apitoolkitClient= APIToolkit.NewClient({apiKey: "<API-KEY>"});
+app.use(apitoolkitClient.expressMiddleware);
+
+app.get("/", (req, res) => {
+  try {
   const response = await observeAxios(axios).get(`${baseURL}/ping`);
+  res.send(response);
 } catch (error) {
   ReportError(error);
+  res.send("Something went wrong")
 }
+});
 ```
 
 This works automatically from within a web request which is wrapped by the apitoolkit middleware. But if called from a background job, ReportError will not know how to actually Report the Error.
 In that case, you can call ReportError, but on the apitoolkit client, instead.
 
 ```js
-import { APIToolkit, observeAxios } from 'apitoolkit-express';
+import {APIToolkit , ReportError } from "apitoolkit-express";
+import express from "express";
+import axios from "axios"
 
-const apitoolkitClient = APIToolkit.NewClient({ apiKey: '<API-KEY>' });
+const app = express();
+const port = 3000;
+const apitoolkitClient = APIToolkit.NewClient({apiKey: "<API-KEY>"});
+app.use(apitoolkitClient.expressMiddleware);
 
-try {
+app.get("/", (req, res) => {
+  try {
   const response = await observeAxios(axios).get(`${baseURL}/ping`);
+  res.send(response);
 } catch (error) {
   apitoolkitClient.ReportError(error);
+  res.send("Something went wrong")
 }
+});
 ```

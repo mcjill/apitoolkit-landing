@@ -3,6 +3,8 @@ title: Flask
 date: 2023-09-18
 publishdate: 2023-09-18
 weight: 20
+toc: true
+imageurl: /assets/img/framework-logos/flask-logo.png
 menu:
   main:
     weight: 20
@@ -93,7 +95,7 @@ app = Flask(__name__)
 redact_res = ["$.api_key", "$.password"]
 # A list of fields to redact from request body
 redact_req = ["$.credit-card.cvv", "$.credit-card.name"]
-# A list of fields to redact from request and repsonse headers
+# A list of fields to redact from request and response headers
 redact_headers = ["Authorization", "Cookie"]
 
 apitoolkit = APIToolkit(api_key="<API_KEY>", debug=True,redact_response_body=redact_res, redact_request_body=redact_req,redact_headers=redact_headers)
@@ -119,9 +121,13 @@ It is important to note that while the `redact_headers` config field accepts a l
 the `redact_request_body` and `redact_response_body` expect a list of JSONPath strings as arguments.
 
 The choice of JSONPath was selected to allow you have great flexibility in descibing which fields within your responses are sensitive.
+
 Also note that these list of items to be redacted will be aplied to all endpoint requests and responses on your server.
-To learn more about jsonpath to help form your queries, please take a look at this cheatsheet:
-[https://lzone.de/cheat-sheet/JSONPath](https://lzone.de/cheat-sheet/JSONPath)
+
+To learn more about jsonpath, please take a look at these resources:
+
+1. [Query expressions for JSONPATH](https://ietf-wg-jsonpath.github.io/draft-ietf-jsonpath-base/draft-ietf-jsonpath-base.html)
+2. [JSONPATH Cheat Sheet](https://lzone.de/cheat-sheet/JSONPath)
 
 ## Tags and Service Versions
 
@@ -132,8 +138,7 @@ Enhance your request monitoring in APIToolkit by including tags and specifying s
 ```python
 apitoolkit = APIToolkit(api_key="<API_KEY>", debug=True, service_version="3.0.0", tags=["prod", "eu"])
 ```
-
-# Outgoing Requests
+## Outgoing Requests
 
 Effectively monitor outgoing HTTP requests from your Flask application using the `observe_request` function from the `apitoolkit_flask` module. This function allows you to capture and forward copies of both incoming and outgoing requests to an APIToolkit server for thorough monitoring and analysis.
 
@@ -151,8 +156,7 @@ async def sample_route(subject):
 ```
 
 The `observe_request` function wraps an HTTPX client, allowing you to use it seamlessly for any request, just like you would with HTTPX.
-
-# Error Reporting
+## Error Reporting
 
 If you're familiar with sentry, bugsnag, or rollbar, you'll easily grasp this use case. However, with APIToolkit, errors are always linked to a parent request, enabling you to query and associate errors that occurred while serving a specific customer request. To report errors to APIToolkit, utilize the `report_error` function from the `apitoolkit_flask` module. You can report as many errors as needed during a request.
 
